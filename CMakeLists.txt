@@ -27,32 +27,83 @@ endif()
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 
 if(WIN32)
-set(OS_SOURCE lib/win32/osdep_win32.cpp)
-set(OS_LINK_LIBRARY WinRing0x64)
-set(OS_LINK_DIR ./win32)
-LINK_DIRECTORIES(${OS_LINK_DIR})
+    # PawnIO configuration
+    set(OS_SOURCE lib/win32/osdep_win32.cpp)
+    
+    # PawnIO requires the following setup:
+    # 1. PawnIO must be installed on the system
+    # 2. Set PAWNIO_ROOT environment variable or CMake variable to PawnIO installation directory
+    # 3. Example: cmake -DPAWNIO_ROOT="C:\Program Files\PawnIO" ..
+    
+    if(NOT PAWNIO_ROOT)
+        # Try common installation paths
+        if(EXISTS "C:/Program Files/PawnIO")
+            set(PAWNIO_ROOT "C:/Program Files/PawnIO")
+        elseif(EXISTS "C:/Program Files (x86)/PawnIO")
+            set(PAWNIO_ROOT "C:/Program Files (x86)/PawnIO")
+        elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pawnio")
+            set(PAWNIO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/pawnio")
+        else()
+            message(FATAL_ERROR 
+                "PawnIO not found. Please set PAWNIO_ROOT environment variable or pass -DPAWNIO_ROOT=<path> to cmake\n"
+                "PawnIO can be downloaded from: https://github.com/namazso/PawnIO"
+            )
+        endif()
+    endif()
+    
+    message(STATUS "PawnIO Root: ${PAWNIO_ROOT}")
+    
+    # Include PawnIO headers
+    set(PAWNIO_INCLUDE_DIR "${PAWNIO_ROOT}/include")
+    if(NOT EXISTS "${PAWNIO_INCLUDE_DIR}")
+        message(FATAL_ERROR "PawnIO include directory not found at ${PAWNIO_INCLUDE_DIR}")
+    endif()
+    
+    # Find PawnIOLib
+    find_library(PAWNIO_LIB NAMES PawnIOLib
+        PATHS "${PAWNIO_ROOT}/lib" "${PAWNIO_ROOT}"
+        NO_DEFAULT_PATH
+    )
+    
+    if(NOT PAWNIO_LIB)
+        message(FATAL_ERROR 
+            "PawnIOLib library not found in ${PAWNIO_ROOT}/lib\n"
+            "Make sure PawnIO is properly installed"
+        )
+    endif()
+    
+    message(STATUS "PawnIOLib found: ${PAWNIO_LIB}")
+    
+    # Create interface library for PawnIO
+    add_library(PawnIO INTERFACE)
+    target_include_directories(PawnIO INTERFACE "${PAWNIO_INCLUDE_DIR}")
+    target_link_libraries(PawnIO INTERFACE "${PAWNIO_LIB}")
+    
+    set(OS_LINK_LIBRARY PawnIO)
+    set(OS_STATIC_LINK_LIBRARY PawnIO)
+    
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-set(OS_SOURCE lib/linux/osdep_linux.c lib/linux/osdep_linux_mem.c lib/linux/osdep_linux_smu_kernel_module.c)
+    set(OS_SOURCE lib/linux/osdep_linux.c lib/linux/osdep_linux_mem.c lib/linux/osdep_linux_smu_kernel_module.c)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBPCI REQUIRED libpci)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBPCI REQUIRED libpci)
 
-add_library(ryzenadj_libpci INTERFACE)
-add_library(RyzenAdj::Libpci ALIAS ryzenadj_libpci)
-target_include_directories(ryzenadj_libpci INTERFACE ${LIBPCI_INCLUDE_DIRS})
-target_compile_options(ryzenadj_libpci INTERFACE ${LIBPCI_CFLAGS_OTHER})
-target_link_libraries(ryzenadj_libpci INTERFACE ${LIBPCI_LDFLAGS})
+    add_library(ryzenadj_libpci INTERFACE)
+    add_library(RyzenAdj::Libpci ALIAS ryzenadj_libpci)
+    target_include_directories(ryzenadj_libpci INTERFACE ${LIBPCI_INCLUDE_DIRS})
+    target_compile_options(ryzenadj_libpci INTERFACE ${LIBPCI_CFLAGS_OTHER})
+    target_link_libraries(ryzenadj_libpci INTERFACE ${LIBPCI_LDFLAGS})
 
-add_library(ryzenadj_libpci_static INTERFACE)
-add_library(RyzenAdj::LibpciStatic ALIAS ryzenadj_libpci_static)
-target_include_directories(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_INCLUDE_DIRS})
-target_compile_options(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_CFLAGS_OTHER})
-target_link_libraries(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_LDFLAGS})
+    add_library(ryzenadj_libpci_static INTERFACE)
+    add_library(RyzenAdj::LibpciStatic ALIAS ryzenadj_libpci_static)
+    target_include_directories(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_INCLUDE_DIRS})
+    target_compile_options(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_CFLAGS_OTHER})
+    target_link_libraries(ryzenadj_libpci_static INTERFACE ${LIBPCI_STATIC_LDFLAGS})
 
-set(OS_LINK_LIBRARY RyzenAdj::Libpci)
-set(OS_STATIC_LINK_LIBRARY RyzenAdj::LibpciStatic)
+    set(OS_LINK_LIBRARY RyzenAdj::Libpci)
+    set(OS_STATIC_LINK_LIBRARY RyzenAdj::LibpciStatic)
 else()
-message(FATAL_ERROR "Unsupported operating system: ${CMAKE_SYSTEM_NAME}")
+    message(FATAL_ERROR "Unsupported operating system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
 set(COMMON_SOURCES lib/nb_smu_ops.c lib/api.c lib/cpuid.c)
