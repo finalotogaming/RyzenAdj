@@ -1,21 +1,42 @@
-# RyzenAdj
-Adjust power management settings for Ryzen Mobile Processors.
+# RyzenAdj - PawnIO Edition
+Adjust power management settings for Ryzen Mobile Processors with modern PawnIO driver support.
 
-[![Build Status](https://travis-ci.org/FlyGoat/RyzenAdj.svg?branch=master)](https://travis-ci.org/FlyGoat/RyzenAdj)
+[![GitHub](https://img.shields.io/badge/GitHub-finalotogaming%2FRyzenAdj-blue)](https://github.com/finalotogaming/RyzenAdj)
 
 Based on: [FlyGoat/ryzen_nb_smu](https://github.com/flygoat/ryzen_nb_smu)
 
-RyzenAdjUI_WPF by "JustSkill" is no longer maintained, for GUI please see  [Universal x86 Tuning Utility](https://github.com/JamesCJ60/Universal-x86-Tuning-Utility) or [ryzen-controller-team/ryzen-controller](https://gitlab.com/ryzen-controller-team/ryzen-controller/).
+**⚠️ This is the PawnIO branch** - For the original WinRing0 version, see the [master branch](https://github.com/finalotogaming/RyzenAdj/tree/master)
+
+RyzenAdjUI_WPF by "JustSkill" is no longer maintained, for GUI please see [Universal x86 Tuning Utility](https://github.com/JamesCJ60/Universal-x86-Tuning-Utility) or [ryzen-controller-team/ryzen-controller](https://github.com/ryzen-controller-team/ryzen-controller)
+
+## What is PawnIO?
+
+PawnIO is a modern, actively maintained kernel driver that provides safe hardware access on Windows. This PawnIO edition replaces the legacy WinRing0 driver with:
+
+- ✅ **Modern & Maintained** - Active development and security updates
+- ✅ **Signed Driver** - Better compatibility with Windows 10/11
+- ✅ **Kernel-Mode Access** - Direct PCI and memory operations
+- ✅ **Standard Error Handling** - Uses Windows NTSTATUS codes
+- ✅ **Open Source** - Full transparency of driver operations
+
+## Key Differences from WinRing0
+
+| Feature | WinRing0 | PawnIO |
+|---------|----------|--------|
+| Maintenance | ❌ Unmaintained | ✅ Active |
+| Windows 11 Support | ⚠️ Limited | ✅ Full |
+| Driver Signing | ❌ Unsigned | ✅ Signed |
+| Architecture | Dual DLL (WinRing0 + inpoutx64) | Single kernel driver |
+| Error Handling | Proprietary codes | Standard NTSTATUS |
 
 ## Usage
-The command line interface is identical on both Windows and Unix-Like OS.
 
-You should run it with Administrator on Windows or root on Linux.
+The command line interface is identical to the original RyzenAdj.
 
-You can write a shell script or bat to do it automatically.
+You must run it with **Administrator privileges** on Windows.
 
 ```
-$./ryzenadj -h
+$ ./ryzenadj -h
 Usage: ryzenadj [options]
 
  Ryzen Power Management adjust tool.
@@ -59,152 +80,201 @@ Settings
 ```
 
 ### Demo
-If I'm going to set all the Power Limit to 45W, and Tctl to 90 °C,
-then the command line should be:
 
-    ./ryzenadj --stapm-limit=45000 --fast-limit=45000 --slow-limit=45000 --tctl-temp=90
+If you're going to set all Power Limits to 45W and Tctl to 90°C:
+
+    ryzenadj.exe --stapm-limit=45000 --fast-limit=45000 --slow-limit=45000 --tctl-temp=90
 
 ### Documentation
+
 - [Supported Models](https://github.com/FlyGoat/RyzenAdj/wiki/Supported-Models)
 - [Renoir Tuning Guide](https://github.com/FlyGoat/RyzenAdj/wiki/Renoir-Tuning-Guide)
 - [Options](https://github.com/FlyGoat/RyzenAdj/wiki/Options)
 - [FAQ](https://github.com/FlyGoat/RyzenAdj/wiki/FAQ)
+- **[PawnIO Setup Guide](PAWNIO_SETUP_WINDOWS.md)** - Installation and troubleshooting
+- **[PawnIO Porting Guide](PAWNIO_PORTING_GUIDE.md)** - Technical details
 
 ## Installation
 
-You don't need to install RyzenAdj because it does not need configuration, everything is set via arguments
-However, some settings could get overwritten by power management features of your device, and you need to regularly set your values again.
+### Windows Installation with PawnIO
 
-We did provide some examples for automation. And these require configuration during installation.
+**Step 1: Install PawnIO Driver** (One-time setup)
+
+1. Download PawnIO from: https://github.com/namazso/PawnIO/releases
+2. Extract to a location (e.g., `C:\Tools\PawnIO`)
+3. Run `install.bat` as Administrator
+4. Reboot if prompted
+
+Verify installation:
+```bash
+sc query PawnIO
+# Should show: STATE: RUNNING
+```
+
+**Step 2: Build RyzenAdj with PawnIO**
+
+```bash
+git clone https://github.com/finalotogaming/RyzenAdj.git
+cd RyzenAdj
+git checkout pawnio-port
+
+mkdir build
+cd build
+cmake -DPAWNIO_ROOT="C:\Tools\PawnIO" ..
+cmake --build . --config Release
+```
+
+**Step 3: Run RyzenAdj**
+
+Always run as Administrator:
+```bash
+ryzenadj.exe --info
+```
+
+Or create a shortcut with "Run as administrator" checked.
+
+**Step 4 (Optional): Automation with Task Scheduler**
+
+1. Open Task Scheduler
+2. Create Basic Task → "RyzenAdj"
+3. Set trigger to "At startup"
+4. Action: Start program → `C:\path\to\ryzenadj.exe`
+5. Arguments: `--stapm-limit=45000 --fast-limit=45000 --slow-limit=45000`
+6. Check "Run with highest privileges"
+
+See [PAWNIO_SETUP_WINDOWS.md](PAWNIO_SETUP_WINDOWS.md) for detailed instructions.
 
 ### Linux Installation
 
-Because it is very easy to build the latest version of RyzenAdj on Linux, we don't provide precompiled packages for distributions.
-Just follow the build instructions below and you are ready to use it.
+Same as original - PawnIO is Windows-only. Use the master branch on Linux.
 
-### Windows Installation
+Linux build:
+```bash
+git clone https://github.com/finalotogaming/RyzenAdj.git
+cd RyzenAdj
+git checkout master
 
-Before you start installing anything, it is highly recommended getting familiar with RyzenAdj to find out what can be done on your device.
-Use the CLI `ryzenadj.exe` to test the support of your device and to benchmark the effects of each setting.
-If your values don't stay persistent you may want to consider installing our example script for automation.
-
-1. Prepare your favorite RyzenAdj arguments
-1. Copy the content of your RyzenAdj folder to the final destination
-1. Put your configuration into `readjustService.ps1` and test it as administrator until everything works as expected
-1. Install `readjustService.ps1` as Task for Windows Task Scheduler by running `installServiceTask.bat`
-
-Deinstallation of the Task can be done via `uninstallServiceTask.bat`
-
-Over Windows Task Scheduler you can check if it is running. It is called `RyzenAdj` below `AMD` folder.
-Or just run
-
-    SCHTASKS /query /TN "AMD\RyzenAdj"
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+sudo make install
+```
 
 ## Build
 
 ### Build Requirements
 
-Building this tool requires C & C++ compilers as well as **cmake**.
+- **Windows**: Visual Studio 2019+ with MSVC, or Clang + CMake
+- **Linux**: GCC/Clang + CMake
+- **All platforms**: CMake 3.10+
+
+### Windows with PawnIO
+
+**Prerequisites:**
+- PawnIO installed and driver loaded
+- Visual Studio 2019+ or Clang
+- CMake 3.10+
+
+**Build Steps:**
+
+```bash
+# Clone the repository
+git clone https://github.com/finalotogaming/RyzenAdj.git
+cd RyzenAdj
+git checkout pawnio-port
+
+# Create build directory
+mkdir build
+cd build
+
+# Configure with PawnIO path
+cmake -DPAWNIO_ROOT="C:\Tools\PawnIO" -DCMAKE_BUILD_TYPE=Release ..
+
+# Build
+cmake --build . --config Release
+
+# Binary will be in: build\Release\ryzenadj.exe
+```
+
+**If CMake can't find PawnIO:**
+
+1. Verify PawnIO is installed at the path you specified
+2. Check these files exist:
+   - `C:\Tools\PawnIO\include\pawnio_um.h`
+   - `C:\Tools\PawnIO\lib\PawnIOLib.lib`
+3. Set environment variable: `set PAWNIO_ROOT=C:\Tools\PawnIO`
+4. Try CMake again
 
 ### Linux
 
-RyzenAdj needs elevated access to the NB config space. This can be achieved by using either one of
-these two methods:
+See the Linux section in [the master branch README](https://github.com/finalotogaming/RyzenAdj/blob/master/README.md#linux)
 
-* Using libpci and exposing `/dev/mem`
-* Using the ryzen\_smu kernel module
+Same procedure works on this branch for Linux builds (uses libpci, not PawnIO).
 
-RyzenAdj will try ryzen\_smu first, and then fallback to /dev/mem, if no compatible smu driver is found.
-The minimum supported version of ryzen_smu is 0.1.7
-If no backend is available, RyzenAdj will fail initialization.
+## Troubleshooting
 
-_**Please note that `/dev/mem` access may be restricted, for security reasons, in your kernel config**_
+### "Failed to open PawnIO device"
 
-Please make sure that you have libpci dependency before compiling.
+1. **Verify driver is loaded:**
+   ```bash
+   sc query PawnIO
+   ```
+   Should show `STATE: RUNNING`
 
-On Debian-based distros this is covered by installing **pcilib-dev** package:
+2. **Restart driver:**
+   ```bash
+   sc stop PawnIO
+   sc start PawnIO
+   ```
 
-    sudo apt install build-essential cmake libpci-dev
+3. **Reinstall PawnIO:**
+   ```bash
+   sc delete PawnIO
+   # Then run install.bat from PawnIO directory again
+   ```
 
-On Fedora:
+### "Permission denied" or access errors
 
-    sudo dnf install cmake gcc-c++ pciutils-devel
+- Always run as Administrator
+- Right-click `ryzenadj.exe` → "Run as administrator"
+- Or use Task Scheduler with "Run with highest privileges" option
 
-On Arch:
+### Build errors with CMake
 
-    sudo pacman -S base-devel pciutils cmake
+- **"PawnIO not found"**: Set `-DPAWNIO_ROOT="C:\path\to\PawnIO"`
+- **"pawnio_um.h not found"**: Check PawnIO include directory exists
+- **"PawnIOLib.lib not found"**: Verify PawnIO library directory has this file
 
+See [PAWNIO_SETUP_WINDOWS.md](PAWNIO_SETUP_WINDOWS.md) for more detailed troubleshooting.
 
-On OpenSUSE Tumbleweed:
+## Contributing
 
-    sudo zypper in cmake gcc14-c++ pciutils-devel
+- **Bugs/Issues**: Report on [GitHub Issues](https://github.com/finalotogaming/RyzenAdj/issues)
+- **PawnIO Issues**: https://github.com/namazso/PawnIO/issues
+- **Original RyzenAdj**: https://github.com/FlyGoat/RyzenAdj
 
-You may need to add the `iomem=relaxed` param to your kernel params on Tumbleweed, or [you may run into errors at runtime](https://github.com/FlyGoat/RyzenAdj/issues/241).
+## License
 
-If your Distribution is not supported, try finding the packages or use [Distrobox](https://github.com/89luca89/distrobox) or [Toolbox](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox/) instead.
+- **RyzenAdj**: LGPL-3.0
+- **PawnIO**: GPL-2.0
+- **This port**: Maintains LGPL-3.0 for RyzenAdj code
 
-The simplest way to build it:
+## Credits
 
-    git clone https://github.com/FlyGoat/RyzenAdj.git
-    cd RyzenAdj
-    rm -r win32
-    mkdir build && cd build
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    make
-    if [ -d ~/.local/bin ]; then ln -s $(readlink -f ryzenadj) ~/.local/bin/ryzenadj && echo "symlinked to ~/.local/bin/ryzenadj"; fi
-    if [ -d ~/.bin ]; then ln -s $(readlink -f ryzenadj) ~/.bin/ryzenadj && echo "symlinked to ~/.bin/ryzenadj"; fi
+- **Original RyzenAdj**: [FlyGoat](https://github.com/FlyGoat)
+- **PawnIO Driver**: [namazso](https://github.com/namazso)
+- **PawnIO Port**: This fork
 
-#### Ryzen\_smu
+## Resources
 
-To let RyzenAdj use ryzen\_smu module, you have to install it first, it is not part of the linux kernel.
+- **PawnIO Homepage**: https://pawnio.eu
+- **PawnIO GitHub**: https://github.com/namazso/PawnIO
+- **Original RyzenAdj**: https://github.com/FlyGoat/RyzenAdj
+- **PawnIO Setup Guide**: [PAWNIO_SETUP_WINDOWS.md](PAWNIO_SETUP_WINDOWS.md)
+- **PawnIO Tech Guide**: [PAWNIO_PORTING_GUIDE.md](PAWNIO_PORTING_GUIDE.md)
 
-On Fedora:
+---
 
-```sh
-sudo dnf install cmake gcc gcc-c++ dkms openssl
-```
-
-Clone and install ryzen\_smu:
-
-```sh
-git clone https://github.com/amkillam/ryzen_smu # Active fork of the original module
-(cd ryzen_smu/ && sudo make dkms-install)
-```
-
-If you are using secure boot, you have to enroll the UEFI keys which dkms has generated on its first
-run. These have to be added to your machines UEFI key database. This can be done with following
-command, which will ask you to set a password. This password is only needed _one single time_ later
-in the MOK manager.
-
-```sh
-sudo mokutil --import /var/lib/dkms/mok.pub
-```
-
-Restart your system. This will boot into the MOK manager. Choose `Enroll MOK`, enter your password
-and then reboot.
-[Here](https://github.com/dell/dkms/blob/f7f526c145ecc01fb4ac4eab3009b1879b14ced4/README.md#secure-boot)
-are some screenshots describing the process.
-
-The module is now loaded and visible via dmesg. It will show a message about the kernel being
-tainted, but this just means it loaded a (potentially proprietary) binary blob.
-
-Build and install RyzenAdj:
-
-```sh
-git clone https://github.com/FlyGoat/RyzenAdj
-cd RyzenAdj
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-make -C build -j"$(nproc)"
-sudo cp -v build/ryzenadj /usr/local/bin/
-```
-
-### Windows
-
-It can be built by Visual Studio + MSVC automatically, or Clang + Nmake in command line.
-However, as for now, MingW-gcc can't be used to compile for some reason.
-
-Required dll is included in ./win32 of source tree. Please put the dll
-library and sys driver in the same folder with ryzenadj.exe.
-
-We don't recommend you to build by yourself on Windows since the environment configuration
-is very complicated. If you would like to use ryzenadj functions in your program, see libryzenadj.
+**Branch**: pawnio-port  
+**Last Updated**: 2026-07-07  
+**Status**: ✅ Ready for Production
