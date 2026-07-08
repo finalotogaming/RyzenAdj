@@ -347,4 +347,12 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
+# PawnIO Port - Exclude legacy WinRing0 binaries
+win32/WinRing0x64.dll
+win32/WinRing0x64.lib
+win32/WinRing0x64.sys
+win32/WinRing0x64.exp
+win32/inpoutx64.dll
+win32/inpoutx64.lib
+
 # End of https://www.gitignore.io/api/visualstudio
